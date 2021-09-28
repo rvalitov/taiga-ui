@@ -663,6 +663,12 @@ export const pages: TuiDocPages = [
     },
     {
         section: $localize`Components`,
+        title: 'Rating',
+        keywords: 'рейтинг, rating',
+        route: '/components/rating',
+    },
+    {
+        section: $localize`Components`,
         title: 'Selects',
         subPages: [
             {
