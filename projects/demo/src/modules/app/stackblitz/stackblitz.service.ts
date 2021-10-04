@@ -8,8 +8,7 @@ import {default as tsconfig} from '!!raw-loader!./project-files/tsconfig.txt';
 
 import {Injectable} from '@angular/core';
 import stackblitz from '@stackblitz/sdk';
-import {CodeEditor} from '@taiga-ui/addon-doc';
-import {FrontEndExample} from '../../interfaces/front-end-example';
+import {CodeEditor, TuiDocExampleProcessed} from '@taiga-ui/addon-doc';
 import {TsFileComponentParser, TsFileModuleParser} from '../classes';
 import {STACKBLITZ_DEPS} from './stackblitz-deps.constants';
 import {
@@ -32,7 +31,7 @@ const APP_COMP_META = {
 export class StackblitzService implements CodeEditor {
     readonly name = 'Stackblitz';
 
-    open(component: string, sampleId: string, content: FrontEndExample) {
+    open(component: string, sampleId: string, content: TuiDocExampleProcessed) {
         if (!content.HTML || !content.TypeScript) {
             return;
         }
@@ -84,7 +83,7 @@ export class StackblitzService implements CodeEditor {
                 [appPrefix`app.module.ts`]: appModule.toString(),
                 [appPrefix`app.component.ts`]: appCompTs.toString(),
                 [appPrefix`app.component.html`]: `<tui-root>\n\n${content.HTML}\n</tui-root>`,
-                [appPrefix`app.component.less`]: prepareLess(content.LESS || ''),
+                [appPrefix`app.component.less`]: prepareLess(content.LESS ?? ''),
             },
             tags: ['Angular', 'Taiga UI', 'Angular components', 'UI Kit'],
         });

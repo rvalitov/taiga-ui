@@ -18,7 +18,7 @@
     polymorpheus-outlet
     [content]="description"
 ></h4>
-<div class="t-example">
+<div class="t-example" *ngIf="processor$ | async as content">
     <div class="t-tabs-wrapper">
         <tui-tabs-with-more
             class="t-tabs"
@@ -34,7 +34,7 @@
             tuiButton
             appearance="flat"
             size="s"
-            (click)="codeEditor.open(componentName, id || '',  processedContent)"
+            (click)="codeEditor.open(componentName, id || '',  content)"
         >
             Edit on {{codeEditor.name}}
         </button>

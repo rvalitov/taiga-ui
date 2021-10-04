@@ -1,11 +1,6 @@
-export const EXAMPLE_PRIMARY_FILE_NAME = {
-    TS: 'TypeScript',
-    LESS: 'LESS',
-    HTML: 'HTML',
-} as const;
+import {TuiDocExample} from '@taiga-ui/addon-doc';
 
-export interface FrontEndExample {
-    [EXAMPLE_PRIMARY_FILE_NAME.TS]?: string;
-    [EXAMPLE_PRIMARY_FILE_NAME.HTML]?: string;
-    [EXAMPLE_PRIMARY_FILE_NAME.LESS]?: string;
-}
+/**
+ * @deprecated - use TuiDocExample directly
+ */
+export interface FrontEndExample extends TuiDocExample {}

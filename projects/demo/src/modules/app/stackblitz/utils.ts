@@ -1,11 +1,14 @@
-import {FrontEndExample} from '../../interfaces/front-end-example';
+import {Project} from '@stackblitz/sdk/typings/interfaces';
+import {TuiDocCodeProcessedValue} from '@taiga-ui/addon-doc';
 import {TsFileComponentParser, TsFileModuleParser, TsFileParser} from '../classes';
 import {isLess, isPrimaryComponentFile, isTS} from '../utils';
 
-export const prepareLess = (content: string): string => {
-    return content.replace(
-        '~@taiga-ui/core/styles/taiga-ui-local',
-        '@taiga-ui/core/styles/taiga-ui-local.less',
+export const prepareLess = (content: TuiDocCodeProcessedValue): string => {
+    return (
+        content?.replace(
+            '~@taiga-ui/core/styles/taiga-ui-local',
+            '@taiga-ui/core/styles/taiga-ui-local.less',
+        ) ?? ''
     );
 };
 
@@ -13,9 +16,9 @@ export const appPrefix = (stringsPart: TemplateStringsArray, path: string = '') 
     `src/app/${stringsPart.join('')}${path}`;
 
 type FileName = string;
-type FileContent = string;
+type FileContent = TuiDocCodeProcessedValue;
 
-export const getSupportFiles = <T extends FrontEndExample>(
+export const getSupportFiles = <T extends Record<string, TuiDocCodeProcessedValue>>(
     files: T,
 ): Array<[FileName, FileContent]> => {
     return Object.entries(files).filter(
@@ -25,15 +28,15 @@ export const getSupportFiles = <T extends FrontEndExample>(
 
 export const prepareSupportFiles = (
     files: Array<[FileName, FileContent]>,
-): Record<FileName, FileContent> => {
-    const processedContent: Record<FileName, FileContent> = {};
+): Project['files'] => {
+    const processedContent: Project['files'] = {};
 
     for (const [fileName, fileContent] of files) {
         const prefixedFileName = appPrefix`${fileName}`;
 
         processedContent[prefixedFileName] = isLess(fileName)
-            ? prepareLess(fileContent)
-            : fileContent;
+            ? prepareLess(fileContent) ?? ''
+            : fileContent ?? '';
     }
 
     return processedContent;

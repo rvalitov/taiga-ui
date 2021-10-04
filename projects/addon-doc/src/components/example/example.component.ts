@@ -12,12 +12,14 @@ import {TuiHandler, tuiPure} from '@taiga-ui/cdk';
 import {TuiNotification, TuiNotificationsService} from '@taiga-ui/core';
 import {TUI_COPY_TEXTS} from '@taiga-ui/kit';
 import {PolymorpheusContent} from '@tinkoff/ng-polymorpheus';
-import {Observable} from 'rxjs';
+import {Observable, Subject} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {CodeEditor} from '../../interfaces/code-editor';
+import {TuiDocExample, TuiDocExampleProcessed} from '../../interfaces/page';
 import {TUI_DOC_CODE_EDITOR} from '../../tokens/code-editor';
 import {TUI_DOC_EXAMPLE_CONTENT_PROCESSOR} from '../../tokens/example-content-processor';
 import {TUI_DOC_EXAMPLE_TEXTS} from '../../tokens/i18n';
+import {ensureProcessedContent} from '../../utils/ensure-processed-content';
 
 // Ambient type cannot be used without dynamic https://github.com/angular/angular/issues/23395
 // @dynamic
@@ -28,6 +30,8 @@ import {TUI_DOC_EXAMPLE_TEXTS} from '../../tokens/i18n';
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TuiDocExampleComponent {
+    public readonly processor$: Subject<TuiDocExampleProcessed> = new Subject();
+
     @Input()
     heading: PolymorpheusContent = '';
 
@@ -35,8 +39,13 @@ export class TuiDocExampleComponent {
     description: PolymorpheusContent = '';
 
     @Input()
-    set content(content: Record<string, string>) {
-        this.processedContent = this.processContent(content);
+    set content(content: TuiDocExample) {
+        ensureProcessedContent(content).then(
+            (processedContent: TuiDocExampleProcessed) => {
+                this.processedContent = this.processContent(processedContent);
+                this.processor$.next(this.processedContent);
+            },
+        );
     }
 
     @Input()
@@ -44,7 +53,7 @@ export class TuiDocExampleComponent {
 
     activeItemIndex = 0;
 
-    processedContent: Record<string, string> = {};
+    processedContent: TuiDocExampleProcessed = {};
 
     readonly defaultTab = this.texts[0];
 
@@ -64,8 +73,8 @@ export class TuiDocExampleComponent {
         readonly codeEditor: CodeEditor | null,
         @Inject(TUI_DOC_EXAMPLE_CONTENT_PROCESSOR)
         private readonly processContent: TuiHandler<
-            Record<string, string>,
-            Record<string, string>
+            TuiDocExample,
+            TuiDocExampleProcessed
         >,
     ) {}
 
@@ -105,7 +114,7 @@ export class TuiDocExampleComponent {
     }
 
     @tuiPure
-    private getTabs(content: Record<string, string>): readonly string[] {
+    private getTabs(content: TuiDocExampleProcessed): readonly string[] {
         return [this.defaultTab, ...Object.keys(content)];
     }
 }
