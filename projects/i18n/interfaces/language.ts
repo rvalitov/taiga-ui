@@ -157,9 +157,17 @@ export type LanguageEditor = {
     };
 };
 
+export type LanguagePreview = {
+    previewTexts: {
+        close: string;
+        rotate: string;
+    };
+};
+
 export interface Language
     extends LanguageCore,
         LanguageKit,
         LanguageCommerce,
         LanguageTable,
-        LanguageEditor {}
+        LanguageEditor,
+        LanguagePreview {}

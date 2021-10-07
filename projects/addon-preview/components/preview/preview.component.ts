@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import {DomSanitizer} from '@angular/platform-browser';
 import {TuiPreviewService} from '@taiga-ui/addon-preview/components/preview-host';
+import {TUI_PREVIEW_TOOLBAR_TEXTS} from '@taiga-ui/addon-preview/tokens';
 import {
     clamp,
     dragAndDropFrom,
@@ -19,6 +20,7 @@ import {
     typedFromEvent,
 } from '@taiga-ui/cdk';
 import {tuiSlideInTop} from '@taiga-ui/core';
+import {LanguagePreview} from '@taiga-ui/i18n';
 import {BehaviorSubject, combineLatest, merge, Observable, Subject} from 'rxjs';
 import {
     distinctUntilChanged,
@@ -26,10 +28,10 @@ import {
     map,
     mapTo,
     pairwise,
-    scan,
     startWith,
     switchMap,
     takeUntil,
+    tap,
 } from 'rxjs/operators';
 
 const INITIAL_SCALE_COEF = 0.8;
@@ -59,8 +61,11 @@ export class TuiPreviewComponent {
 
     readonly drag$ = new Subject<TuiDragState | null>();
 
-    readonly zoom$ = new BehaviorSubject<number>(1);
+    readonly zoom$ = new BehaviorSubject<number>(this.minZoom);
     readonly rotation$ = new BehaviorSubject<number>(0);
+    readonly coordinates$ = new BehaviorSubject<readonly [number, number]>(
+        EMPTY_COORDINATES,
+    );
 
     readonly transitioned$ = merge(
         this.drag$.pipe(
@@ -92,23 +97,25 @@ export class TuiPreviewComponent {
         }),
     );
 
+    zoomEvent$ = typedFromEvent(this.elementRef.nativeElement, 'wheel');
+
     // TODO: use named tuples after TS update
     readonly wrapperTranslate$ = combineLatest([
         this.drag$.pipe(startWith(null), pairwise()),
-        this.zoom$,
         this.rotation$,
     ]).pipe(
-        scan<
-            [[TuiDragState | null, TuiDragState | null], number, number],
-            [number, number]
-        >((coordinates, latest) => {
-            const [pair, zoom, rotation] = latest;
+        map<
+            [[TuiDragState | null, TuiDragState | null], number],
+            readonly [number, number]
+        >(state => {
+            const [pair, rotation] = state;
+            let coordinates = this.coordinates$.value;
 
-            if (pair[1] === null || pair[0] === null) {
-                return EMPTY_COORDINATES;
-            }
-
-            if (pair[1].stage === TuiDragStage.Start) {
+            if (
+                pair[1] === null ||
+                pair[0] === null ||
+                pair[1].stage === TuiDragStage.Start
+            ) {
                 return coordinates;
             }
 
@@ -127,20 +134,17 @@ export class TuiPreviewComponent {
             const moveX = pair[1].event.clientX - pair[0].event.clientX;
             const moveY = pair[1].event.clientY - pair[0].event.clientY;
 
-            const offsetX = ((zoom - this.minZoom) * this.width) / 2;
-            const offsetY = ((zoom - this.minZoom) * this.height) / 2;
-
-            const x = clamp(coordinates[0] + moveX, -offsetX, offsetX);
-            const y = clamp(coordinates[1] + moveY, -offsetY, offsetY);
-
-            return [x, y];
-        }, EMPTY_COORDINATES),
-        map(([x, y]) => `${x}px, ${y}px`),
+            return this.getGuarderCoordinates(
+                coordinates[0] + moveX,
+                coordinates[1] + moveY,
+            );
+        }),
+        tap(([x, y]) => this.coordinates$.next([x, y])),
         distinctUntilChanged(),
     );
 
     readonly wrapperTransform$ = combineLatest([
-        this.wrapperTranslate$,
+        this.coordinates$.pipe(map(([x, y]) => `${x}px, ${y}px`)),
         this.zoom$,
         this.rotation$,
     ]).pipe(
@@ -181,8 +185,11 @@ export class TuiPreviewComponent {
         @Inject(DomSanitizer) private readonly sanitizer: DomSanitizer,
         @Inject(ElementRef) readonly elementRef: ElementRef<HTMLElement>,
         @Inject(TuiDestroyService) readonly destroy$: Observable<void>,
+        @Inject(TUI_PREVIEW_TOOLBAR_TEXTS)
+        readonly texts$: Observable<LanguagePreview['previewTexts']>,
     ) {
         this.initClickSubscription();
+        this.wrapperTranslate$.subscribe();
     }
 
     close() {
@@ -199,6 +206,28 @@ export class TuiPreviewComponent {
         this.refresh(clientWidth, clientHeight);
     }
 
+    onWheel(zoom: WheelEvent) {
+        if (!this.zoomable) {
+            return;
+        }
+
+        const oldScale = this.zoom$.value;
+        const newScale = clamp(this.zoom$.value - zoom.deltaY * 0.01, this.minZoom, 2);
+
+        const scaleCenter = this.getScaleCenter(zoom, this.coordinates$.value);
+
+        const moveX = scaleCenter[0] * oldScale - scaleCenter[0] * newScale;
+        const moveY = scaleCenter[1] * oldScale - scaleCenter[1] * newScale;
+
+        const coordinates = this.getGuarderCoordinates(
+            this.coordinates$.value[0] + moveX,
+            this.coordinates$.value[1] + moveY,
+        );
+
+        this.coordinates$.next(coordinates);
+        this.zoom$.next(newScale);
+    }
+
     onResize(contentResizeEntries: ReadonlyArray<ResizeObserverEntry>) {
         if (contentResizeEntries.length === 0) {
             return;
@@ -207,6 +236,19 @@ export class TuiPreviewComponent {
         const {width, height} = contentResizeEntries[0].contentRect;
 
         this.refresh(width, height);
+    }
+
+    private get offsets(): {offsetX: number; offsetY: number} {
+        const offsetX = ((this.zoom$.value - this.minZoom) * this.width) / 2 + 10;
+        const offsetY = ((this.zoom$.value - this.minZoom) * this.height) / 2 + 10;
+
+        return {offsetX, offsetY};
+    }
+
+    private getGuarderCoordinates(x: number, y: number): readonly [number, number] {
+        const {offsetX, offsetY} = this.offsets;
+
+        return [clamp(x, -offsetX, offsetX), clamp(y, -offsetY, offsetY)];
     }
 
     private calculateMinZoom(
@@ -233,11 +275,11 @@ export class TuiPreviewComponent {
     }
 
     private recalculateCoordinatesAfterZoom(
-        previous: [number, number],
+        previous: readonly [number, number],
         nextX: number,
         nextY: number,
         rotation: number,
-    ): [number, number] {
+    ): readonly [number, number] {
         const vertical = rotation % 180 === 0;
         const third =
             (vertical
@@ -295,5 +337,18 @@ export class TuiPreviewComponent {
         this.zoom$.next(this.minZoom);
         this.rotation$.next(0);
         this.drag$.next(null);
+    }
+
+    private getScaleCenter(
+        event: MouseEvent,
+        coords: readonly [number, number],
+    ): [number, number] {
+        return [
+            (event.clientX - coords[0] - this.elementRef.nativeElement.offsetWidth / 2) /
+                this.zoom$.value,
+
+            (event.clientY - this.elementRef.nativeElement.offsetHeight / 2 - coords[1]) /
+                this.zoom$.value,
+        ];
     }
 }
