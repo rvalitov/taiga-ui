@@ -28,10 +28,10 @@ import {
     map,
     mapTo,
     pairwise,
-    scan,
     startWith,
     switchMap,
     takeUntil,
+    throttleTime,
 } from 'rxjs/operators';
 
 const INITIAL_SCALE_COEF = 0.8;
@@ -258,6 +258,7 @@ export class TuiPreviewComponent {
         typedFromEvent(nativeElement, 'touchmove')
             .pipe(
                 filter(event => event.touches.length > 1),
+                throttleTime(100),
                 map(event => {
                     const clientX =
                         (event.touches[0].clientX + event.touches[1].clientX) / 2;
