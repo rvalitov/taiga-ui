@@ -198,9 +198,11 @@ export class TuiPreviewComponent {
 
                     const delta = this.hypot - hypot;
 
+                    this.hypot = hypot;
+
                     const oldScale = this.zoom$.value;
                     const newScale = clamp(
-                        this.zoom$.value - delta * 0.01,
+                        this.zoom$.value - delta * 0.001,
                         this.minZoom,
                         2,
                     );
