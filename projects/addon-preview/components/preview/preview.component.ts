@@ -183,6 +183,13 @@ export class TuiPreviewComponent {
                 this.drag$.next(event);
             });
 
+        typedFromEvent(nativeElement, 'touchstart')
+            .pipe(
+                filter(event => event.touches.length > 1),
+                takeUntil(this.destroy$),
+            )
+            .subscribe(() => (this.hypot = 0));
+
         typedFromEvent(nativeElement, 'touchmove')
             .pipe(
                 filter(event => event.touches.length > 1),
@@ -209,7 +216,7 @@ export class TuiPreviewComponent {
 
                     const oldScale = this.zoom$.value;
                     const newScale = clamp(
-                        this.zoom$.value - delta * 0.001,
+                        this.zoom$.value - delta * 0.005,
                         this.minZoom,
                         2,
                     );
