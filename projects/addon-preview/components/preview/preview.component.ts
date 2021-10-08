@@ -184,11 +184,13 @@ export class TuiPreviewComponent {
             });
 
         typedFromEvent(nativeElement, 'touchstart')
-            .pipe(
-                filter(event => event.touches.length > 1),
-                takeUntil(this.destroy$),
-            )
-            .subscribe(() => (this.hypot = 0));
+            .pipe(filter(event => event.touches.length > 1))
+            .subscribe(event => {
+                this.hypot = Math.hypot(
+                    event.touches[0].clientX - event.touches[1].clientX,
+                    event.touches[0].clientY - event.touches[1].clientY,
+                );
+            });
 
         typedFromEvent(nativeElement, 'touchmove')
             .pipe(
