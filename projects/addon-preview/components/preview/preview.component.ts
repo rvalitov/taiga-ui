@@ -167,6 +167,13 @@ export class TuiPreviewComponent {
                         new TuiDragState(TuiDragStage.Continues, event.touches[0] as any),
                 ),
             ),
+            typedFromEvent(nativeElement, 'touchstart').pipe(
+                filter(event => event.touches.length < 2),
+                map(
+                    event =>
+                        new TuiDragState(TuiDragStage.Start, event.touches[0] as any),
+                ),
+            ),
         )
             .pipe(
                 filter(() => this.zoomable),
@@ -183,10 +190,10 @@ export class TuiPreviewComponent {
                     const clientX =
                         (event.touches[0].clientX + event.touches[1].clientX) / 2;
                     const clientY =
-                        (event.touches[0].clientY - event.touches[1].clientY) / 2;
+                        (event.touches[0].clientY + event.touches[1].clientY) / 2;
 
                     const hypot = Math.hypot(
-                        event.touches[0].clientX + event.touches[1].clientX,
+                        event.touches[0].clientX - event.touches[1].clientX,
                         event.touches[0].clientY - event.touches[1].clientY,
                     );
 
