@@ -156,7 +156,7 @@ export class TuiPreviewComponent {
         merge(
             dragAndDropFrom(nativeElement),
             typedFromEvent(nativeElement, 'touchmove').pipe(
-                filter(event => event.touches.length > 1),
+                filter(event => event.touches.length < 2),
                 map(
                     event =>
                         /**
