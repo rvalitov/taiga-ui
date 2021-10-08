@@ -175,7 +175,53 @@ export class TuiPreviewComponent {
             .subscribe(event => {
                 this.drag$.next(event);
             });
+
+        typedFromEvent(nativeElement, 'touchmove')
+            .pipe(
+                filter(event => event.touches.length > 1),
+                map(event => {
+                    const clientX =
+                        (event.touches[0].clientX + event.touches[1].clientX) / 2;
+                    const clientY =
+                        (event.touches[0].clientY - event.touches[1].clientY) / 2;
+
+                    const hypot = Math.hypot(
+                        event.touches[0].clientX + event.touches[1].clientX,
+                        event.touches[0].clientY - event.touches[1].clientY,
+                    );
+
+                    const center = this.getScaleCenter(
+                        {clientX, clientY},
+                        this.coordinates$.value,
+                        this.zoom$.value,
+                    );
+
+                    const delta = this.hypot - hypot;
+
+                    const oldScale = this.zoom$.value;
+                    const newScale = clamp(
+                        this.zoom$.value - delta * 0.01,
+                        this.minZoom,
+                        2,
+                    );
+
+                    const moveX = center[0] * oldScale - center[0] * newScale;
+                    const moveY = center[1] * oldScale - center[1] * newScale;
+
+                    const coordinates = this.getGuarderCoordinates(
+                        this.coordinates$.value[0] + moveX,
+                        this.coordinates$.value[1] + moveY,
+                    );
+
+                    this.coordinates$.next(coordinates);
+                    this.zoom$.next(newScale);
+                }),
+                takeUntil(this.destroy$),
+            )
+            .subscribe();
     }
+
+    hypot = 0;
 
     constructor(
         @Inject(TuiPreviewService) private readonly previewService: TuiPreviewService,
@@ -203,15 +249,19 @@ export class TuiPreviewComponent {
         this.refresh(clientWidth, clientHeight);
     }
 
-    onWheel(zoom: WheelEvent) {
+    onWheel(event: WheelEvent) {
         if (!this.zoomable) {
             return;
         }
 
         const oldScale = this.zoom$.value;
-        const newScale = clamp(this.zoom$.value - zoom.deltaY * 0.01, this.minZoom, 2);
+        const newScale = clamp(this.zoom$.value - event.deltaY * 0.01, this.minZoom, 2);
 
-        const scaleCenter = this.getScaleCenter(zoom, this.coordinates$.value);
+        const scaleCenter = this.getScaleCenter(
+            event,
+            this.coordinates$.value,
+            this.zoom$.value,
+        );
 
         const moveX = scaleCenter[0] * oldScale - scaleCenter[0] * newScale;
         const moveY = scaleCenter[1] * oldScale - scaleCenter[1] * newScale;
@@ -343,15 +393,14 @@ export class TuiPreviewComponent {
     }
 
     private getScaleCenter(
-        event: MouseEvent,
+        {clientX, clientY}: {clientX: number; clientY: number},
         coords: readonly [number, number],
+        scale: number,
     ): [number, number] {
         return [
-            (event.clientX - coords[0] - this.elementRef.nativeElement.offsetWidth / 2) /
-                this.zoom$.value,
-
-            (event.clientY - this.elementRef.nativeElement.offsetHeight / 2 - coords[1]) /
-                this.zoom$.value,
+            (clientX - coords[0] - this.elementRef.nativeElement.offsetWidth / 2) / scale,
+            (clientY - this.elementRef.nativeElement.offsetHeight / 2 - coords[1]) /
+                scale,
         ];
     }
 }
