@@ -162,6 +162,15 @@ export type LanguagePreview = {
         close: string;
         rotate: string;
     };
+    previewPagination: {
+        next: string;
+        previous: string;
+    };
+    zoomTexts: {
+        zoomOut: string;
+        zoomIn: string;
+        reset: string;
+    };
 };
 
 export interface Language

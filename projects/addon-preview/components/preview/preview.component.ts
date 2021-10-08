@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import {DomSanitizer} from '@angular/platform-browser';
 import {TuiPreviewService} from '@taiga-ui/addon-preview/components/preview-host';
-import {TUI_PREVIEW_TOOLBAR_TEXTS} from '@taiga-ui/addon-preview/tokens';
+import {TUI_PREVIEW_TEXTS} from '@taiga-ui/addon-preview/tokens';
 import {
     clamp,
     dragAndDropFrom,
@@ -185,7 +185,7 @@ export class TuiPreviewComponent {
         @Inject(DomSanitizer) private readonly sanitizer: DomSanitizer,
         @Inject(ElementRef) readonly elementRef: ElementRef<HTMLElement>,
         @Inject(TuiDestroyService) readonly destroy$: Observable<void>,
-        @Inject(TUI_PREVIEW_TOOLBAR_TEXTS)
+        @Inject(TUI_PREVIEW_TEXTS)
         readonly texts$: Observable<LanguagePreview['previewTexts']>,
     ) {
         this.initClickSubscription();
