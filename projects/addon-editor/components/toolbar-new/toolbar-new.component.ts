@@ -19,9 +19,9 @@ import {
     TUI_EDITOR_CODE_OPTIONS,
     TUI_EDITOR_FONT_OPTIONS,
     TUI_EDITOR_TABLE_COMMANDS,
+    TUI_EDITOR_TOOLBAR_TEXTS,
     TUI_IMAGE_LOADER,
 } from '@taiga-ui/addon-editor/tokens';
-import {TUI_EDITOR_TOOLBAR_TEXTS} from '@taiga-ui/addon-editor/tokens';
 import {
     EMPTY_QUERY,
     isNativeFocusedIn,
@@ -34,6 +34,7 @@ import {
 import {TuiButtonComponent, TuiHostedDropdownComponent} from '@taiga-ui/core';
 import {LanguageEditor} from '@taiga-ui/i18n';
 import {LEFT_ALIGNED_DROPDOWN_CONTROLLER_PROVIDER} from '@taiga-ui/kit';
+import {PolymorpheusContent} from '@tinkoff/ng-polymorpheus';
 import {Observable} from 'rxjs';
 import {map, take} from 'rxjs/operators';
 
@@ -69,7 +70,7 @@ const EDITOR_BLANK_COLOR = 'rgb(51, 51, 51)';
 export class TuiToolbarNewComponent {
     @Input()
     @tuiDefaultProp(toolsAssertion, 'Attach and TeX are not yet implemented in Editor')
-    tools: ReadonlyArray<TuiEditorTool> = defaultEditorTools;
+    tools: ReadonlyArray<TuiEditorTool | PolymorpheusContent> = defaultEditorTools;
 
     @Input()
     @tuiDefaultProp()
@@ -141,6 +142,14 @@ export class TuiToolbarNewComponent {
             LanguageEditor['editorFontOptions']
         >,
     ) {}
+
+    get customTools(): PolymorpheusContent[] {
+        return this.tools.filter(
+            tool =>
+                typeof tool !== 'string' ||
+                !Object.values<string>(TuiEditorTool).includes(tool),
+        );
+    }
 
     get focused(): boolean {
         return (
