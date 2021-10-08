@@ -21,7 +21,7 @@ import {
 } from '@taiga-ui/cdk';
 import {tuiSlideInTop} from '@taiga-ui/core';
 import {LanguagePreview} from '@taiga-ui/i18n';
-import {BehaviorSubject, combineLatest, merge, Observable, of, Subject} from 'rxjs';
+import {BehaviorSubject, combineLatest, merge, Observable, Subject} from 'rxjs';
 import {
     distinctUntilChanged,
     filter,
