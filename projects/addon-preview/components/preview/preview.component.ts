@@ -193,78 +193,33 @@ export class TuiPreviewComponent {
                 );
             });
 
-        typedFromEvent(nativeElement, 'touchstart')
-            .pipe(
-                filter(event => event.touches.length > 1),
-                switchMap(({touches}) => {
-                    const initialHypot = Math.hypot(
-                        touches[0].clientX - touches[1].clientX,
-                        touches[0].clientY - touches[1].clientY,
-                    );
-
-                    return combineLatest(
-                        typedFromEvent(nativeElement, 'touchmove'),
-                        of(initialHypot),
-                    );
-                }),
-                scan((hypot, latest) => {
-                    const [event, initialHypot] = latest;
-
-                    if (!hypot) {
-                        return initialHypot;
-                    }
-
-                    const clientX =
-                        (event.touches[0].clientX + event.touches[1].clientX) / 2;
-                    const clientY =
-                        (event.touches[0].clientY + event.touches[1].clientY) / 2;
-
-                    const newHypot = Math.hypot(
-                        event.touches[0].clientX - event.touches[1].clientX,
-                        event.touches[0].clientY - event.touches[1].clientY,
-                    );
-
-                    const center = this.getScaleCenter(
-                        {clientX, clientY},
-                        this.coordinates$.value,
-                        this.zoom$.value,
-                    );
-
-                    const delta = hypot - newHypot;
-
-                    const oldScale = this.zoom$.value;
-                    const newScale = clamp(
-                        this.zoom$.value - delta * 0.005,
-                        this.minZoom,
-                        2,
-                    );
-
-                    const moveX = center[0] * oldScale - center[0] * newScale;
-                    const moveY = center[1] * oldScale - center[1] * newScale;
-
-                    const coordinates = this.getGuarderCoordinates(
-                        this.coordinates$.value[0] + moveX,
-                        this.coordinates$.value[1] + moveY,
-                    );
-
-                    this.coordinates$.next(coordinates);
-                    this.zoom$.next(newScale);
-
-                    return newHypot;
-                }, 0),
-            )
-            .subscribe();
-
-        // typedFromEvent(nativeElement, 'touchmove')
+        // typedFromEvent(nativeElement, 'touchstart')
         //     .pipe(
         //         filter(event => event.touches.length > 1),
-        //         map(event => {
+        //         switchMap(({touches}) => {
+        //             const initialHypot = Math.hypot(
+        //                 touches[0].clientX - touches[1].clientX,
+        //                 touches[0].clientY - touches[1].clientY,
+        //             );
+
+        //             return combineLatest(
+        //                 typedFromEvent(nativeElement, 'touchmove'),
+        //                 of(initialHypot),
+        //             );
+        //         }),
+        //         scan((hypot, latest) => {
+        //             const [event, initialHypot] = latest;
+
+        //             if (!hypot) {
+        //                 return initialHypot;
+        //             }
+
         //             const clientX =
         //                 (event.touches[0].clientX + event.touches[1].clientX) / 2;
         //             const clientY =
         //                 (event.touches[0].clientY + event.touches[1].clientY) / 2;
 
-        //             const hypot = Math.hypot(
+        //             const newHypot = Math.hypot(
         //                 event.touches[0].clientX - event.touches[1].clientX,
         //                 event.touches[0].clientY - event.touches[1].clientY,
         //             );
@@ -275,9 +230,7 @@ export class TuiPreviewComponent {
         //                 this.zoom$.value,
         //             );
 
-        //             const delta = this.hypot - hypot;
-
-        //             this.hypot = hypot;
+        //             const delta = hypot - newHypot;
 
         //             const oldScale = this.zoom$.value;
         //             const newScale = clamp(
@@ -296,10 +249,57 @@ export class TuiPreviewComponent {
 
         //             this.coordinates$.next(coordinates);
         //             this.zoom$.next(newScale);
-        //         }),
-        //         takeUntil(this.destroy$),
+
+        //             return newHypot;
+        //         }, 0),
         //     )
         //     .subscribe();
+
+        typedFromEvent(nativeElement, 'touchmove')
+            .pipe(
+                filter(event => event.touches.length > 1),
+                map(event => {
+                    const clientX =
+                        (event.touches[0].clientX + event.touches[1].clientX) / 2;
+                    const clientY =
+                        (event.touches[0].clientY + event.touches[1].clientY) / 2;
+
+                    const hypot = Math.hypot(
+                        event.touches[0].clientX - event.touches[1].clientX,
+                        event.touches[0].clientY - event.touches[1].clientY,
+                    );
+
+                    const center = this.getScaleCenter(
+                        {clientX, clientY},
+                        this.coordinates$.value,
+                        this.zoom$.value,
+                    );
+
+                    const delta = this.hypot - hypot;
+
+                    this.hypot = hypot;
+
+                    const oldScale = this.zoom$.value;
+                    const newScale = clamp(
+                        this.zoom$.value - delta * 0.005,
+                        this.minZoom,
+                        2,
+                    );
+
+                    const moveX = center[0] * oldScale - center[0] * newScale;
+                    const moveY = center[1] * oldScale - center[1] * newScale;
+
+                    const coordinates = this.getGuarderCoordinates(
+                        this.coordinates$.value[0] + moveX,
+                        this.coordinates$.value[1] + moveY,
+                    );
+
+                    this.coordinates$.next(coordinates);
+                    this.zoom$.next(newScale);
+                }),
+                takeUntil(this.destroy$),
+            )
+            .subscribe();
     }
 
     hypot = 0;
