@@ -31,7 +31,6 @@ import {
     startWith,
     switchMap,
     takeUntil,
-    tap,
 } from 'rxjs/operators';
 
 const INITIAL_SCALE_COEF = 0.8;
@@ -97,8 +96,6 @@ export class TuiPreviewComponent {
         }),
     );
 
-    zoomEvent$ = typedFromEvent(this.elementRef.nativeElement, 'wheel');
-
     // TODO: use named tuples after TS update
     readonly wrapperTranslate$ = combineLatest([
         this.drag$.pipe(startWith(null), pairwise()),
@@ -139,7 +136,6 @@ export class TuiPreviewComponent {
                 coordinates[1] + moveY,
             );
         }),
-        tap(([x, y]) => this.coordinates$.next([x, y])),
         distinctUntilChanged(),
     );
 
@@ -160,6 +156,7 @@ export class TuiPreviewComponent {
         merge(
             dragAndDropFrom(nativeElement),
             typedFromEvent(nativeElement, 'touchmove').pipe(
+                filter(event => event.touches.length > 1),
                 map(
                     event =>
                         /**
@@ -189,7 +186,7 @@ export class TuiPreviewComponent {
         readonly texts$: Observable<LanguagePreview['previewTexts']>,
     ) {
         this.initClickSubscription();
-        this.wrapperTranslate$.subscribe();
+        this.initWrapperTranslateSubscription();
     }
 
     close() {
@@ -323,6 +320,12 @@ export class TuiPreviewComponent {
                         : this.zoom$.value + 0.5,
                 );
             });
+    }
+
+    private initWrapperTranslateSubscription() {
+        this.wrapperTranslate$
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(coords => this.coordinates$.next(coords));
     }
 
     private refresh(width: number, height: number) {

@@ -12,7 +12,7 @@
         [style.cursor]="cursor$ | async"
         (tuiResize)="onResize($event)"
         (waMutationObserver)="onMutation(contentWrapper)"
-        (mousewheel)="onWheel($event)"
+        (wheel)="onWheel($event)"
     >
         <ng-content></ng-content>
     </section>
