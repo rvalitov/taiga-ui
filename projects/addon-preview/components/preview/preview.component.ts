@@ -28,10 +28,10 @@ import {
     map,
     mapTo,
     pairwise,
+    repeat,
     startWith,
     switchMap,
     takeUntil,
-    throttleTime,
 } from 'rxjs/operators';
 
 const INITIAL_SCALE_COEF = 0.8;
@@ -58,6 +58,7 @@ export class TuiPreviewComponent {
 
     width = 0;
     height = 0;
+    hypot = 0;
 
     readonly drag$ = new Subject<TuiDragState | null>();
 
@@ -156,17 +157,23 @@ export class TuiPreviewComponent {
     set contentWrapper({nativeElement}: ElementRef<HTMLElement>) {
         merge(
             dragAndDropFrom(nativeElement),
-            typedFromEvent(nativeElement, 'touchmove').pipe(
+            typedFromEvent(nativeElement, 'touchstart').pipe(
+                switchMap(() => typedFromEvent(nativeElement, 'touchmove')),
                 filter(event => event.touches.length < 2),
-                map(
-                    event =>
-                        /**
-                         * TODO: find the better way. DragFrom does not support touches and
-                         * they are incompatible with MouseEvent, but we may use it
-                         * while we need only ClientX/Y
-                         */
-                        new TuiDragState(TuiDragStage.Continues, event.touches[0] as any),
-                ),
+                takeUntil(typedFromEvent(nativeElement, 'touchend')),
+                repeat(),
+                map(event => {
+                    /**
+                     * TODO: find the better way. DragFrom does not support touches and
+                     * they are incompatible with MouseEvent, but we may use it
+                     * while we need only ClientX/Y
+                     */
+
+                    return new TuiDragState(
+                        TuiDragStage.Continues,
+                        event.touches[0] as any,
+                    );
+                }),
             ),
             typedFromEvent(nativeElement, 'touchstart').pipe(
                 filter(event => event.touches.length < 2),
@@ -193,72 +200,9 @@ export class TuiPreviewComponent {
                 );
             });
 
-        // typedFromEvent(nativeElement, 'touchstart')
-        //     .pipe(
-        //         filter(event => event.touches.length > 1),
-        //         switchMap(({touches}) => {
-        //             const initialHypot = Math.hypot(
-        //                 touches[0].clientX - touches[1].clientX,
-        //                 touches[0].clientY - touches[1].clientY,
-        //             );
-
-        //             return combineLatest(
-        //                 typedFromEvent(nativeElement, 'touchmove'),
-        //                 of(initialHypot),
-        //             );
-        //         }),
-        //         scan((hypot, latest) => {
-        //             const [event, initialHypot] = latest;
-
-        //             if (!hypot) {
-        //                 return initialHypot;
-        //             }
-
-        //             const clientX =
-        //                 (event.touches[0].clientX + event.touches[1].clientX) / 2;
-        //             const clientY =
-        //                 (event.touches[0].clientY + event.touches[1].clientY) / 2;
-
-        //             const newHypot = Math.hypot(
-        //                 event.touches[0].clientX - event.touches[1].clientX,
-        //                 event.touches[0].clientY - event.touches[1].clientY,
-        //             );
-
-        //             const center = this.getScaleCenter(
-        //                 {clientX, clientY},
-        //                 this.coordinates$.value,
-        //                 this.zoom$.value,
-        //             );
-
-        //             const delta = hypot - newHypot;
-
-        //             const oldScale = this.zoom$.value;
-        //             const newScale = clamp(
-        //                 this.zoom$.value - delta * 0.005,
-        //                 this.minZoom,
-        //                 2,
-        //             );
-
-        //             const moveX = center[0] * oldScale - center[0] * newScale;
-        //             const moveY = center[1] * oldScale - center[1] * newScale;
-
-        //             const coordinates = this.getGuarderCoordinates(
-        //                 this.coordinates$.value[0] + moveX,
-        //                 this.coordinates$.value[1] + moveY,
-        //             );
-
-        //             this.coordinates$.next(coordinates);
-        //             this.zoom$.next(newScale);
-
-        //             return newHypot;
-        //         }, 0),
-        //     )
-        //     .subscribe();
-
         typedFromEvent(nativeElement, 'touchmove')
             .pipe(
                 filter(event => event.touches.length > 1),
-                throttleTime(100),
                 map(event => {
                     const clientX =
                         (event.touches[0].clientX + event.touches[1].clientX) / 2;
@@ -302,8 +246,6 @@ export class TuiPreviewComponent {
             )
             .subscribe();
     }
-
-    hypot = 0;
 
     constructor(
         @Inject(TuiPreviewService) private readonly previewService: TuiPreviewService,
