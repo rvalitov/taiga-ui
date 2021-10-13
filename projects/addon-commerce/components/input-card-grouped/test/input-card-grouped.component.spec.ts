@@ -1,7 +1,9 @@
-import {Component, ViewChild} from '@angular/core';
+import {Component, TemplateRef, ViewChild} from '@angular/core';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
+import {TuiSvgModule} from '@taiga-ui/core';
 import {NativeInputPO} from '@taiga-ui/testing';
+import {PolymorpheusContent} from '@tinkoff/ng-polymorpheus';
 import {configureTestSuite} from 'ng-bullet';
 import {TuiInputCardGroupedComponent} from '../input-card-grouped.component';
 import {TuiInputCardGroupedModule} from '../input-card-grouped.module';
@@ -13,11 +15,18 @@ describe('InputCardGrouped', () => {
                 [formControl]="control"
                 (binChange)="onBinChange($event)"
             ></tui-input-card-grouped>
+
+            <ng-template #customIconTemplate>
+                <tui-svg src="tuiIconVisa"></tui-svg>
+            </ng-template>
         `,
     })
     class TestComponent {
         @ViewChild(TuiInputCardGroupedComponent, {static: true})
         component: TuiInputCardGroupedComponent;
+
+        @ViewChild('customIconTemplate', {read: TemplateRef})
+        customIconTemplate: TemplateRef<any>;
 
         control = new FormControl('');
 
@@ -32,7 +41,7 @@ describe('InputCardGrouped', () => {
 
     configureTestSuite(() => {
         TestBed.configureTestingModule({
-            imports: [ReactiveFormsModule, TuiInputCardGroupedModule],
+            imports: [ReactiveFormsModule, TuiInputCardGroupedModule, TuiSvgModule],
             declarations: [TestComponent],
         });
     });
@@ -195,6 +204,54 @@ describe('InputCardGrouped', () => {
         });
     });
 
+    describe('iconSrc', () => {
+        beforeEach(() => setCard('4111 1111 1111 1111'));
+
+        it('input-card-grouped have a default icon', () => {
+            expect(testComponent.control.valid).toEqual(true);
+            expect(testComponent.component.iconTemplateContent).toEqual(null);
+            expect(testComponent.component.iconSvgImage).toEqual(null);
+            expect(testComponent.component.defaultIcon).toEqual('tuiIconVisa');
+            expect(testComponent.component.icon).toEqual('tuiIconVisa');
+            expect(testComponent.control.value).toEqual({card: '4111 1111 1111 1111'});
+
+            expect(getCardIconNodes()?.length).toEqual(0);
+            fixture.detectChanges();
+            expect(getCardIconNodes()?.length).toEqual(1);
+        });
+
+        it('input-card-grouped have tuiIconMastercard icon', () => {
+            testComponent.component.cardSrc = 'tuiIconMastercard';
+
+            expect(testComponent.control.valid).toEqual(true);
+            expect(testComponent.component.iconTemplateContent).toBeNull();
+            expect(testComponent.component.iconSvgImage).toEqual('tuiIconMastercard');
+            expect(testComponent.component.defaultIcon).toEqual('tuiIconVisa');
+            expect(testComponent.component.icon).toEqual('tuiIconMastercard');
+            expect(testComponent.control.value).toEqual({card: '4111 1111 1111 1111'});
+
+            expect(getCardIconNodes()?.length).toEqual(0);
+            fixture.detectChanges();
+            expect(getCardIconNodes()?.length).toEqual(1);
+        });
+
+        it('input-card-grouped have TemplateRef', () => {
+            testComponent.component.cardSrc =
+                fixture.componentInstance.customIconTemplate;
+
+            expect(testComponent.control.valid).toEqual(true);
+            expect(getIconTemplate()).toEqual(jasmine.any(TemplateRef));
+            expect(testComponent.component.iconSvgImage).toBeNull();
+            expect(testComponent.component.defaultIcon).toEqual('tuiIconVisa');
+            expect(testComponent.component.icon).toBeNull();
+            expect(testComponent.control.value).toEqual({card: '4111 1111 1111 1111'});
+
+            expect(getCardIconNodes()?.length).toEqual(0);
+            fixture.detectChanges();
+            expect(getCardIconNodes()?.length).toEqual(1);
+        });
+    });
+
     function testFormat(done: DoneFn, value: string, formatted: string) {
         setCard(value);
         fixture.detectChanges();
@@ -213,10 +270,16 @@ describe('InputCardGrouped', () => {
         return testComponent.component.nativeFocusableElement!.value;
     }
 
+    function getCardIconNodes(): NodeList | null {
+        return fixture.componentRef.location?.nativeElement?.querySelectorAll('.t-card');
+    }
+
+    function getIconTemplate(): PolymorpheusContent | null {
+        return testComponent.component.iconTemplateContent;
+    }
+
     function setCard(card: string) {
-        testComponent.control.setValue({
-            card,
-        });
+        testComponent.control.setValue({card});
     }
 
     function getExpire(): string {

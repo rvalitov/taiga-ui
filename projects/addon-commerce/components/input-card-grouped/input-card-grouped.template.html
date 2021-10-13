@@ -129,11 +129,18 @@
         </label>
     </div>
     <div class="t-icons">
+        <div
+            tuiActiveZone
+            class="t-card"
+            polymorpheus-outlet
+            *ngIf="iconTemplateContent"
+            [content]="iconTemplateContent"
+        ></div>
         <tui-svg
             *ngIf="icon"
+            [src]="icon"
             class="t-card"
             automation-id="tui-input-card-grouped__icon"
-            [src]="icon"
         ></tui-svg>
         <tui-svg
             *ngIf="hasCleaner"

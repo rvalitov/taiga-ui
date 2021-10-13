@@ -93,13 +93,21 @@ const ICONS = {
 export class TuiInputCardGroupedComponent
     extends AbstractTuiNullableControl<TuiCard>
     implements TuiFocusableElementAccessor, TuiDataListHost<Partial<TuiCard>> {
+    iconTemplateContent: PolymorpheusContent | null = null;
+    iconSvgImage: string | null = null;
+
     @Input()
     @tuiDefaultProp()
     autocompleteEnabled = false;
 
     @Input()
-    @tuiDefaultProp()
-    cardSrc: string | null = null;
+    set cardSrc(value: PolymorpheusContent | string | null) {
+        if (typeof value === 'string') {
+            this.iconSvgImage = value;
+        } else if (value !== null) {
+            this.iconTemplateContent = value;
+        }
+    }
 
     @Input()
     @tuiDefaultProp()
@@ -227,14 +235,14 @@ export class TuiInputCardGroupedComponent
         return this.card.length < 16;
     }
 
-    get icon(): string | null {
-        if (this.cardSrc !== null) {
-            return this.cardSrc;
-        }
-
+    get defaultIcon(): string | null {
         const {paymentSystem} = this;
 
         return paymentSystem && ICONS[paymentSystem];
+    }
+
+    get icon(): string | null {
+        return this.iconTemplateContent ? null : this.iconSvgImage || this.defaultIcon;
     }
 
     get bin(): string | null {
