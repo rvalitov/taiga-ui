@@ -13,6 +13,7 @@ import {
     clamp,
     dragAndDropFrom,
     round,
+    TUI_IS_MOBILE,
     tuiDefaultProp,
     TuiDestroyService,
     TuiDragStage,
@@ -73,13 +74,15 @@ export class TuiPreviewComponent {
             filter(drag => drag === null),
             switchMap(() =>
                 merge(
-                    this.zoom$.pipe(filter(zoom => zoom !== this.minZoom)),
+                    this.zoom$.pipe(
+                        filter(zoom => zoom !== this.minZoom && !this.isMobile),
+                    ),
                     this.rotation$.pipe(filter(rotation => rotation !== 0)),
                 ).pipe(mapTo(true), startWith(false)),
             ),
         ),
         this.drag$.pipe(
-            filter(drag => drag !== null),
+            filter(drag => drag !== null && !this.isMobile),
             map(drag => !drag || drag.stage !== TuiDragStage.Continues),
         ),
     );
@@ -252,6 +255,7 @@ export class TuiPreviewComponent {
         @Inject(DomSanitizer) private readonly sanitizer: DomSanitizer,
         @Inject(ElementRef) readonly elementRef: ElementRef<HTMLElement>,
         @Inject(TuiDestroyService) readonly destroy$: Observable<void>,
+        @Inject(TUI_IS_MOBILE) private readonly isMobile: boolean,
         @Inject(TUI_PREVIEW_TEXTS)
         readonly texts$: Observable<LanguagePreview['previewTexts']>,
     ) {
