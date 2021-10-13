@@ -1,8 +1,8 @@
 <ng-container *ngIf="zoomTexts$ | async as texts">
-    <section class="zoom">
+    <section class="t-zoom">
         <button
             tuiIconButton
-            class="sign sign_minus"
+            class="t-sign t-sign_minus"
             size="s"
             appearance=""
             icon="tuiIconMinus"
@@ -12,7 +12,7 @@
             (click)="onMinus()"
         ></button>
         <div
-            class="ghost-dot"
+            class="t-ghost-dot"
             tuiHintMode="onDark"
             tuiHintDirection="top-right"
             [tuiManualHint]="hint"
@@ -21,7 +21,7 @@
         ></div>
         <ng-template #hint>{{getHintText(valueChange | async)}} </ng-template>
         <tui-slider
-            class="slider"
+            class="t-slider"
             [min]="min"
             [max]="max"
             [ngModel]="value"
@@ -29,7 +29,7 @@
         ></tui-slider>
         <button
             tuiIconButton
-            class="sign sign_plus"
+            class="t-sign t-sign_plus"
             size="s"
             appearance=""
             icon="tuiIconPlus"

@@ -10,7 +10,7 @@
     user-select: none;
 }
 
-.header {
+.t-header {
     position: fixed;
     top: 16px;
     display: flex;
@@ -19,7 +19,7 @@
     box-sizing: border-box;
 }
 
-.footer {
+.t-footer {
     position: absolute;
     bottom: 16px;
     display: flex;
@@ -29,13 +29,13 @@
     justify-content: center;
 }
 
-.actions {
+.t-actions {
     display: flex;
     flex: 1;
     justify-content: flex-end;
 }
 
-.title {
+.t-title {
     flex: 1;
 
     @media @mobile {
@@ -43,11 +43,11 @@
     }
 }
 
-.close-button {
+.t-close-button {
     margin-right: 0;
 }
 
-.not-interactive-content {
+.t-not-interactive-content {
     /* stylelint-disable */
     ::ng-deep > * {
         pointer-events: none;
@@ -60,6 +60,6 @@
     touch-action: none;
 }
 
-.transitive {
-    // transition-duration: 0.1s;
+.t-transitive {
+    transition-duration: 0.3s;
 }
