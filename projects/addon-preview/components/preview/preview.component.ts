@@ -294,13 +294,14 @@ export class TuiPreviewComponent {
         const moveX = scaleCenter[0] * oldScale - scaleCenter[0] * newScale;
         const moveY = scaleCenter[1] * oldScale - scaleCenter[1] * newScale;
 
+        this.zoom$.next(newScale);
+
         const coordinates = this.getGuarderCoordinates(
             this.coordinates$.value[0] + moveX,
             this.coordinates$.value[1] + moveY,
         );
 
         this.coordinates$.next(coordinates);
-        this.zoom$.next(newScale);
     }
 
     onResize(contentResizeEntries: ReadonlyArray<ResizeObserverEntry>) {
@@ -314,8 +315,8 @@ export class TuiPreviewComponent {
     }
 
     private get offsets(): {offsetX: number; offsetY: number} {
-        const offsetX = ((this.zoom$.value - this.minZoom) * this.width) / 2 + 10;
-        const offsetY = ((this.zoom$.value - this.minZoom) * this.height) / 2 + 10;
+        const offsetX = ((this.zoom$.value - this.minZoom) * this.width) / 2;
+        const offsetY = ((this.zoom$.value - this.minZoom) * this.height) / 2;
 
         return {offsetX, offsetY};
     }
